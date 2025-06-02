@@ -148,24 +148,72 @@ JOIN discipline d ON c.id = d.course_id
 JOIN discipline_student d_s ON d.id = d_s.discipline_id
 GROUP BY c.course_name;
 
--- сколько студентов у каждого преподавателя?
+-- сколько студентов у каждого преподавателя
 SELECT t.name AS teacher, COUNT(DISTINCT d_s.student_id) AS students_count
 FROM teacher t
 JOIN teacher_discipline t_d ON t.id = t_d.teacher_id
 JOIN discipline_student d_s ON t_d.discipline_id = d_s.discipline_id
 GROUP BY t.name;
 
--- cколько студентов на каждом курсе?
-SELECT c.course_name, COUNT(DISTINCT d_s.student_id) AS student_count
-FROM course c
-JOIN discipline d ON c.id = d.course_id
-JOIN discipline_student d_s ON d.id = d_s.discipline_id
-GROUP BY c.course_name;
-
--- рабочие показатели преподавателей!
+-- рабочие показатели преподавателей
 SELECT t.name AS teacher, ROUND(AVG(d_s.grade), 2) AS students_average_grade,
 COUNT(DISTINCT d_s.student_id) AS student_count
 FROM teacher t
 JOIN teacher_discipline t_d ON t.id = t_d.teacher_id
 JOIN discipline_student d_s ON t_d.discipline_id = d_s.discipline_id
 GROUP BY t.name;
+
+-- показать студентов и посещаемые ими предметы + оценки
+SELECT student.name AS student, discipline.title AS discipline, discipline_student.grade FROM discipline_student
+JOIN student ON discipline_student.student_id = student.id
+JOIN discipline ON discipline_student.discipline_id = discipline.id
+
+-- показать предметы и оценки конкретного сдудента
+SELECT student.name AS student, discipline.title AS discipline, discipline_student.grade FROM student
+JOIN discipline_student ON discipline_student.student_id = student.id
+JOIN discipline ON discipline_student.discipline_id = discipline.id
+WHERE student.id = 5
+
+-- показать кол-во студентов по каждому предмету
+SELECT discipline.title AS discipline, COUNT(discipline_student.student_id) AS count_of_students
+FROM discipline
+JOIN discipline_student ON discipline_student.discipline_id = discipline.id
+GROUP BY discipline.id
+
+-- показать средние оценки студентов по их предметам
+SELECT student.name AS student, AVG(discipline_student.grade) AS avg_grade
+FROM student
+LEFT JOIN discipline_student ON discipline_student.student_id = student.id
+GROUP BY student.id
+
+-- показать кол-во студентов на курсе
+SELECT course.course_name, COUNT(discipline_student.student_id) AS students_of_course
+FROM course
+JOIN discipline ON discipline.course_id = course.id
+JOIN discipline_student ON discipline_student.discipline_id = discipline.id
+GROUP BY course.id
+
+-- показать сколько учителей у каждого студента (DISTINCT - если один учитель ведет два+ предмета)
+SELECT student.name AS student, COUNT(DISTINCT teacher_discipline.teacher_id) AS teachers
+FROM student
+JOIN discipline_student ON discipline_student.student_id = student.id
+-- JOIN discipline ON discipline_student.discipline_id = discipline.id
+JOIN teacher_discipline ON teacher_discipline.discipline_id = discipline_student.discipline_id
+JOIN teacher ON teacher_discipline.teacher_id = teacher.id
+GROUP BY student.id
+
+-- Кто лично с кем знаком (студент <--> учитель) (DISTINCT - убрать дублирование связей, если студент и учитель связаны через несколько дисциплин)
+SELECT DISTINCT student.name AS student, teacher.name AS teacher
+FROM student
+JOIN discipline_student ON discipline_student.student_id = student.id
+JOIN teacher_discipline ON teacher_discipline.discipline_id = discipline_student.discipline_id
+JOIN teacher ON teacher_discipline.teacher_id = teacher.id
+ORDER BY student
+
+
+
+
+
+
+
+
